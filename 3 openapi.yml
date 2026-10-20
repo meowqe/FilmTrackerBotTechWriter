@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: FilmTracker API
+  description: |
+    API для управления списком фильмов пользователя.
+    Все запросы требуют заголовок `Authorization: Bearer <токен>`.
+  version: 1.0.0
+
+servers:
+  - url: https://api.example.com/v1
+
+paths:
+  /films:
+    get:
+      summary: Получить список фильмов
+      description: Возвращает фильмы пользователя. Можно отфильтровать по статусу.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Фильтр по статусу фильма
+          schema:
+            type: string
+            enum: [wishlist, watched]
+      responses:
+        "200":
+          description: Список фильмов
+          content:
+            application/json:
+              example:
+                - id: 1
+                  title: Интерстеллар
+                  status: watched
+                  rating: 9
+                - id: 2
+                  title: Дюна
+                  status: wishlist
+                  rating: null
+        "401":
+          description: Не указан или недействителен токен
+
+    post:
+      summary: Добавить фильм
+      description: Добавляет фильм в список «Хочу посмотреть».
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  description: Название фильма
+                  example: Дюна
+      responses:
+        "201":
+          description: Фильм добавлен
+          content:
+            application/json:
+              example:
+                id: 2
+                title: Дюна
+                status: wishlist
+                rating: null
+        "400":
+          description: Не передано название фильма
+        "409":
+          description: Фильм уже есть в списке
+
+  /films/{id}/rating:
+    put:
+      summary: Поставить оценку
+      description: Устанавливает оценку и переводит фильм в статус `watched`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор фильма
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 10
+                  example: 9
+      responses:
+        "200":
+          description: Оценка сохранена
+        "404":
+          description: Фильм не найден
+        "422":
+          description: Оценка вне диапазона 1–10
